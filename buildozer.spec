@@ -1,20 +1,67 @@
-[app]
+name: Build Price Notebook APK
 
-title = Price Notebook
-package.name = pricenotebook
-package.domain = org.price
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
 
-source.dir = .
-source.include_exts = py,json
+jobs:
+  build:
+    runs-on: ubuntu-24.04
 
-requirements = python3,kivy
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
 
-orientation = portrait
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-fullscreen = 0
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
 
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            python3-virtualenv \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo6 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            automake \
+            autopoint \
+            gettext
 
-[buildozer]
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer
+          pip install cython==0.29.34
 
-log_level = 2
-warn_on_root = 1
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PriceNotebook-APK
+          path: bin/*.apk
